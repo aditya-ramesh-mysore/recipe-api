@@ -15,7 +15,7 @@ class CommandsTests(SimpleTestCase):
     @patch('core.management.commands.checkdb.time')
     @patch('core.management.commands.checkdb.connection')
     def test_checkdb_not_ready(self, connection_mock, time_mock):
-        # Raise a mocked exception, fail the ensure_connection by setting the side effect attribute to exceptio
+        # Raise a mocked exception, fail the ensure_connection by setting the side effect attribute to exception
         connection_mock.ensure_connection.side_effect = [OperationalError] * 6
         call_command('checkdb')
         self.assertEqual(6, connection_mock.ensure_connection.call_count)
