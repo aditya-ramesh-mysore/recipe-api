@@ -11,6 +11,16 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return get_user_model().objects.create_user(**validated_data)
 
+    def update(self, instance, validated_data):
+        password = validated_data.get("password", None)
+        if password:
+            instance.set_password(password)
+        instance.email = validated_data.get("email", instance.email)
+        instance.name = validated_data.get("name", instance.name)
+        instance.save()
+
+        return instance
+
 class AuthSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(style = {"input_type": "password"})
