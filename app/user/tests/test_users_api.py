@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 CREATE_USER_URL = reverse("user:create")
+TOKEN_URL = reverse("user:token")
 
 class UserPublicApisTests(TestCase):
     @classmethod
@@ -37,3 +38,33 @@ class UserPublicApisTests(TestCase):
         u = get_user_model().objects.create_user(**self.payload)
         res = self.client.post(CREATE_USER_URL, self.payload)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_token_creation_success(self):
+        get_user_model().objects.create_user(**self.payload)
+        login_payload = {
+            "email": self.payload["email"],
+            "password": self.payload["password"]
+        }
+        res = self.client.post(TOKEN_URL, login_payload)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("token", res.data)
+
+    def test_bad_credentials_login(self):
+        get_user_model().objects.create_user(**self.payload)
+        login_payload = {
+            "email": self.payload["email"],
+            "password": "random-password"
+        }
+        res = self.client.post(TOKEN_URL, login_payload)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotIn("token", res.data)
+
+    def test_empty_password_login(self):
+        get_user_model().objects.create_user(**self.payload)
+        login_payload = {
+            "email": self.payload["email"],
+            "password": ""
+        }
+        res = self.client.post(TOKEN_URL, login_payload)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotIn("token", res.data)
