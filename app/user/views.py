@@ -14,7 +14,6 @@ class AuthTokenView(ObtainAuthToken):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user_valid_data = serializer.validated_data
-        print(user_valid_data)
         token, created = Token.objects.get_or_create(user=user_valid_data["user"])
         return Response({
             "token": token.key,
