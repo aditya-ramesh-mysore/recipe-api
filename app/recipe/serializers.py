@@ -9,7 +9,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         model = Recipe
 
     def validate(self, attrs):
-        print(self.initial_data)
         for key, value in attrs.items():
             if key not in self.fields:
                 raise serializers.ValidationError()

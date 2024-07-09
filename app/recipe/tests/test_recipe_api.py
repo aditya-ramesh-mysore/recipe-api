@@ -8,6 +8,7 @@ from recipe.serializers import RecipeSerializer
 
 RECIPES_URL = reverse('recipe:recipe-list')
 
+
 def create_recipe(user, **params):
     recipe_obj = {
         'title': 'sample title',
@@ -19,7 +20,7 @@ def create_recipe(user, **params):
     recipe_obj.update(**params)
 
     obj = Recipe.objects.create(user=user, **recipe_obj)
-    print(obj)
+    return obj
 
 class RecipePrivateTests(TestCase):
 
@@ -52,3 +53,71 @@ class RecipePrivateTests(TestCase):
         serializer = RecipeSerializer(recipes, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
+
+    def test_create_recipe(self):
+        payload = {
+            'title': 'sample title',
+            'description': 'sample description',
+            'time_required': 5,
+            'link': "www.example.com/example",
+            'price': 5.5
+        }
+        res = self.client.post(RECIPES_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data['title'], payload['title'])
+
+    def test_retrieve_recipe(self):
+        payload = {
+            'title': 'sample title',
+            'description': 'sample description',
+            'time_required': 5,
+            'link': "www.example.com/example",
+            'price': 5.5
+        }
+
+        obj = create_recipe(user=self.user, **payload)
+        RECIPES_DETAIL_URL = reverse('recipe:recipe-detail', args=[obj.id])
+        res = self.client.get(RECIPES_DETAIL_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        # print(res.data)
+        self.assertEqual(res.data["id"], obj.id)
+
+    # PUT
+    def test_update_recipe(self):
+        payload = {
+            'title': 'sample title 1',
+            'description': 'sample description',
+            'time_required': 5,
+            'link': "www.example.com/example",
+            'price': 5.5
+        }
+        obj = create_recipe(user=self.user, **payload)
+        RECIPE_DETAIL_URL = reverse('recipe:recipe-detail', args=[obj.id])
+        update_payload = {
+            'title': 'sample title new',
+            'description': 'sample description',
+            'time_required': 5,
+            'link': "www.example.com/example",
+            'price': 5.5
+        }
+        res = self.client.put(RECIPE_DETAIL_URL, update_payload)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["title"], update_payload['title'])
+
+    # PATCH
+    def test_patch_recipe(self):
+        payload = {
+            'title': 'sample title 1',
+            'description': 'sample description',
+            'time_required': 5,
+            'link': "www.example.com/example",
+            'price': 5.5
+        }
+        obj = create_recipe(user=self.user, **payload)
+        RECIPE_DETAIL_URL = reverse('recipe:recipe-detail', args=[obj.id])
+        update_payload = {
+            'title': 'sample title new'
+        }
+        res = self.client.patch(RECIPE_DETAIL_URL, update_payload)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["title"], update_payload['title'])

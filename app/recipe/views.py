@@ -40,7 +40,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def create(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            data = serializer.validated_data
             serializer.save(user=request.user)
+            data = serializer.data
             return Response(data=data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
