@@ -1,10 +1,10 @@
 from django.shortcuts import render
 
 # Create your views here.
-from rest_framework import viewsets, status, authentication, permissions
+from rest_framework import viewsets, status, authentication, permissions, mixins, generics
 from rest_framework.response import Response
 from core.models import Recipe
-from .serializers import RecipeSerializer
+from .serializers import RecipeSerializer, TagSerializer
 from django.http import Http404
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -44,3 +44,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
             data = serializer.data
             return Response(data=data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TagViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    serializer_class = TagSerializer
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "id"
+
+    def get_queryset(self):
+        return Tag.objects.filter(user=self.request.user).order_by('name')
