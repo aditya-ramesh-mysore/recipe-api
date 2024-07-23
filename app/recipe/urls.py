@@ -7,4 +7,3 @@ router = DefaultRouter()
 router.register("recipes", RecipeViewSet, basename="recipe")
 router.register("tags", TagViewSet, basename="tag")
 urlpatterns = router.urls
-print(urlpatterns)

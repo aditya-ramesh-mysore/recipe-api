@@ -3,7 +3,7 @@ from django.shortcuts import render
 # Create your views here.
 from rest_framework import viewsets, status, authentication, permissions, mixins, generics
 from rest_framework.response import Response
-from core.models import Recipe
+from core.models import Recipe, Tag
 from .serializers import RecipeSerializer, TagSerializer
 from django.http import Http404
 
@@ -38,9 +38,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=request.data, context={'request': request})
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            serializer.save()
             data = serializer.data
             return Response(data=data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
