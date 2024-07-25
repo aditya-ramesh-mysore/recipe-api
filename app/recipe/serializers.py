@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import (get_user_model, authenticate)
-from core.models import Recipe, Tag
+from core.models import Recipe, Tag, Ingredient
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,8 +40,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    # def validate(self, attrs):
-    #     for key, value in attrs.items():
-    #         if key not in self.fields:
-    #             raise serializers.ValidationError()
-    #     return attrs
+class IngredientSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ["name", "id"]
+        model = Ingredient
+        read_only_fields = ["id"]
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.save()
+        return instance
