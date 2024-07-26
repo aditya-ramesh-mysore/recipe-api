@@ -75,13 +75,7 @@ class IngredientListView(IngredientView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # def patch(self, request, format=None):
-    #     data = request.data
-    #     serializer = self.serializer_class(data=data)
-    #     if serializer.is_valid():
-    #         serializer.save(user=request.user)
-    #         return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class IngredientDetailView(IngredientView):
 
     def get_object(self, id=None):
@@ -116,3 +110,8 @@ class IngredientDetailView(IngredientView):
         serializer = self.serializer_class(ingredient)
         ingredient.delete()
         return Response(data=serializer.data, status=status.HTTP_204_NO_CONTENT)
+
+    def get(self, request, *args, **kwargs):
+        ingredient = self.get_object(kwargs.get("id"))
+        serializer = self.serializer_class(ingredient)
+        return Response(serializer.data, status=status.HTTP_200_OK)
