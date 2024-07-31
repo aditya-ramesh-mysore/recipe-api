@@ -4,7 +4,7 @@ from django.shortcuts import render
 from rest_framework import viewsets, status, authentication, permissions, mixins, generics, views
 from rest_framework.response import Response
 from core.models import Recipe, Tag, Ingredient
-from .serializers import RecipeSerializer, TagSerializer, IngredientSerializer
+from .serializers import RecipeSerializer, TagSerializer, IngredientSerializer, RecipeImageSerializer
 from django.http import Http404
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -44,6 +44,29 @@ class RecipeViewSet(viewsets.ModelViewSet):
             data = serializer.data
             return Response(data=data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class RecipeImageView(views.APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = RecipeImageSerializer
+
+    def post(self, request, *args, **kwargs):
+        recipe_id = self.kwargs['id']
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save(recipe_id)
+            return Response(status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, *args, **kwargs):
+        recipe_id = self.kwargs['id']
+        try:
+            recipe = Recipe.objects.get(id=recipe_id)
+        except Recipe.DoesNotExist:
+            raise Http404
+        serializer = self.serializer_class(recipe)
+        return Response(serializer.data)
+
 
 
 class TagViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):

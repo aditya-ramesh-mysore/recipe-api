@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+import uuid
+import os
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -35,6 +37,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "email"
     objects = UserManager()
 
+def get_updated_filename(instance, filename):
+    id = uuid.uuid4()
+    extension = os.path.splitext(filename)[1]
+    new_name = str(id) + extension
+    return "uploads/recipe/" + new_name
+
 class Recipe(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField()
@@ -44,9 +52,12 @@ class Recipe(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     tags = models.ManyToManyField('Tag')
     ingredients = models.ManyToManyField('Ingredient')
+    image = models.ImageField(null=True, upload_to=get_updated_filename)
 
     def __str__(self):
         return str(self.id) + " - " + self.title
+
+
 
 class Tag(models.Model):
     name = models.CharField(max_length=255)

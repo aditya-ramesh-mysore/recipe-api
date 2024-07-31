@@ -7,6 +7,7 @@ services:
       context: .
     volumes:
       - ./app:/app
+      - static-data-volume:/vol/web
     ports:
       - 9000:9000
     command: sh -c "
@@ -33,3 +34,4 @@ services:
 
 volumes:
   dev-db:
+  static-data-volume:

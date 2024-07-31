@@ -24,7 +24,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, required=False)
     ingredients = IngredientSerializer(many=True, required=False)
     class Meta:
-        fields = ["id", "title", "price", "time_required", "link", "description", "tags", "ingredients"]
+        fields = ["id", "title", "price", "time_required", "link", "description", "tags", "ingredients", "image"]
         read_only_fields = ["id"]
         model = Recipe
 
@@ -62,3 +62,19 @@ class RecipeSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class RecipeImageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = ["image"]
+        extra_kwargs = {"image": {"required": True}}
+
+    def save(self, id):
+        try:
+            recipe = Recipe.objects.get(id=id)
+        except Recipe.DoesNotExist:
+            raise Http404("Recipe does not exist")
+        image = self.validated_data.get("image")
+        recipe.image = image
+        recipe.save()
+        return recipe
