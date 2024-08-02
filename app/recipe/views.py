@@ -6,12 +6,32 @@ from rest_framework.response import Response
 from core.models import Recipe, Tag, Ingredient
 from .serializers import RecipeSerializer, TagSerializer, IngredientSerializer, RecipeImageSerializer
 from django.http import Http404
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiTypes
 
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'tags',
+                OpenApiTypes.STR,
+                description="Tag IDs list"
+            ),
+            OpenApiParameter(
+                'ingredients',
+                OpenApiTypes.STR,
+                description="Ingredient IDs list"
+            )
+        ]
+    )
+)
 class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'id'
+
+    def __convert_string_to_int_list(self, string_list):
+        return [int(s) for s in string_list.split(',')]
     def get_object(self):
         try:
             qs = self.get_queryset()
@@ -22,10 +42,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
     def get_queryset(self):
-        if self.request.user:
-            return Recipe.objects.filter(user=self.request.user).order_by('-id')
-        else:
-            return Recipe.objects.all()
+        tags = self.request.query_params.get('tags', None)
+        ingredients = self.request.query_params.get('ingredients', None)
+        qs = Recipe.objects.all()
+        if tags:
+            tags = self.__convert_string_to_int_list(tags)
+            qs = Recipe.objects.filter(tags__id__in=tags)
+        if ingredients:
+            ingredients = self.__convert_string_to_int_list(ingredients)
+            qs = qs.filter(ingredients__id__in=ingredients)
+
+        return qs.filter(user=self.request.user).order_by('-id')
 
     def list(self, request):
         queryset = self.get_queryset()
@@ -68,7 +95,17 @@ class RecipeImageView(views.APIView):
         return Response(serializer.data)
 
 
-
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'assigned_only',
+                OpenApiTypes.STR,
+                description="Integer 1, indicating only tags attached to a recipe is allowed, 0 otherwise"
+            )
+        ]
+    )
+)
 class TagViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     serializer_class = TagSerializer
     authentication_classes = [authentication.TokenAuthentication]
@@ -76,7 +113,11 @@ class TagViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, mixins.DestroyM
     lookup_field = "id"
 
     def get_queryset(self):
-        return Tag.objects.filter(user=self.request.user).order_by('name')
+        assigned_only = bool(int (self.request.query_params.get('assigned_only', 0)))
+        qs = Tag.objects.filter(user=self.request.user).order_by('name')
+        if assigned_only:
+            qs = qs.filter(recipe__isnull=False)
+        return qs.distinct()
 
 class IngredientView(views.APIView):
     authentication_classes = [authentication.TokenAuthentication]
@@ -85,9 +126,21 @@ class IngredientView(views.APIView):
 
 class IngredientListView(IngredientView):
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'assigned_only',
+                OpenApiTypes.STR,
+                description="Integer 1, indicating only ingredients attached to a recipe is allowed, 0 otherwise"
+            )
+        ]
+    )
     def get(self, request, format=None):
+        assigned_only = bool(int(request.query_params.get('assigned_only', 0)))
         qs = Ingredient.objects.filter(user=request.user)
-        serializer = self.serializer_class(qs, many=True)
+        if assigned_only:
+            qs = qs.filter(recipe__isnull=False)
+        serializer = self.serializer_class(qs.distinct(), many=True)
         return Response(serializer.data)
 
     def post(self, request, format=None):
